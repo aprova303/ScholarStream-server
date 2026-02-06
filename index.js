@@ -9,7 +9,9 @@ const port = process.env.PORT || 3000
 app.use(express.json());
 app.use(cors());
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2zhcuwp.mongodb.net/?appName=Cluster0`;
+// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2zhcuwp.mongodb.net/?appName=Cluster0`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2zhcuwp.mongodb.net/ScholarStream?retryWrites=true&w=majority`;
+
 
 const clientOptions = { serverApi: { version: '1', strict: true, deprecationErrors: true } };
 async function run() {
