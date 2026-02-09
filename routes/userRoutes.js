@@ -10,7 +10,7 @@ const {
   getUsersByRole,
   deleteUser
 } = require('../controllers/userController');
-const { verifyFirebaseToken, verifyRoleAndToken } = require('../config/auth');
+const { verifyFirebaseToken, verifyAdmin } = require('../config/auth');
 
 /**
  * Public route - Create or update user
@@ -31,21 +31,21 @@ router.get('/:email', getUserByEmail);
 /**
  * Admin only - Get all users
  */
-router.get('/', verifyRoleAndToken('Admin'), getAllUsers);
+router.get('/', verifyAdmin, getAllUsers);
 
 /**
  * Admin only - Update user role
  */
-router.patch('/:userId/role', verifyRoleAndToken('Admin'), updateUserRole);
+router.patch('/:userId/role', verifyAdmin, updateUserRole);
 
 /**
  * Admin only - Get users by role
  */
-router.get('/role/:role', verifyRoleAndToken('Admin'), getUsersByRole);
+router.get('/role/:role', verifyAdmin, getUsersByRole);
 
 /**
  * Admin only - Delete user
  */
-router.delete('/:userId', verifyRoleAndToken('Admin'), deleteUser);
+router.delete('/:userId', verifyAdmin, deleteUser);
 
 module.exports = router;

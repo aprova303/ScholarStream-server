@@ -2,12 +2,84 @@
 const Scholarship = require('../models/Scholarship');
 
 /**
- * Get all scholarships
+ * Get all scholarships with search, filter, sort, and pagination
+ * Query parameters:
+ * - search: Search term (scholarshipName, universityName, degree)
+ * - category: Filter by scholarshipCategory
+ * - country: Filter by universityCountry
+ * - sortBy: Sort field (postDate, applicationFees) - default: postDate
+ * - sortOrder: Sort order (asc, desc) - default: desc
+ * - page: Page number (1-indexed) - default: 1
+ * - limit: Items per page - default: 12
  */
 const getAllScholarships = async (req, res) => {
   try {
-    const scholarships = await Scholarship.find().sort({ scholarshipPostDate: -1 });
-    res.json(scholarships);
+    const {
+      search = '',
+      category = '',
+      country = '',
+      sortBy = 'postDate',
+      sortOrder = 'desc',
+      page = 1,
+      limit = 12
+    } = req.query;
+
+    // Build filter object
+    const filter = {};
+
+    // Search filter - searches by name, university, or degree
+    if (search) {
+      filter.$or = [
+        { scholarshipName: { $regex: search, $options: 'i' } },
+        { universityName: { $regex: search, $options: 'i' } },
+        { degree: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Category filter
+    if (category) {
+      filter.scholarshipCategory = category;
+    }
+
+    // Country filter
+    if (country) {
+      filter.universityCountry = country;
+    }
+
+    // Determine sort field and order
+    let sortField = 'scholarshipPostDate';
+    if (sortBy === 'applicationFees') {
+      sortField = 'applicationFees';
+    }
+
+    const sortOrderNum = sortOrder === 'asc' ? 1 : -1;
+    const sortObject = { [sortField]: sortOrderNum };
+
+    // Calculate pagination
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 12;
+    const skip = (pageNum - 1) * limitNum;
+
+    // Get total count for pagination
+    const total = await Scholarship.countDocuments(filter);
+
+    // Fetch scholarships with filters, sort, and pagination
+    const scholarships = await Scholarship.find(filter)
+      .sort(sortObject)
+      .skip(skip)
+      .limit(limitNum);
+
+    // Send response with pagination metadata
+    res.json({
+      success: true,
+      data: scholarships,
+      pagination: {
+        current: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum)
+      }
+    });
   } catch (error) {
     console.error('Error fetching scholarships:', error.message);
     res.status(500).json({ error: error.message });

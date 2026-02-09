@@ -9,7 +9,7 @@ const {
   deleteScholarship,
   getScholarshipsByCategory
 } = require('../controllers/scholarshipController');
-const { verifyFirebaseToken, verifyRoleAndToken } = require('../config/auth');
+const { verifyAdmin } = require('../config/auth');
 
 /**
  * Public routes
@@ -21,8 +21,8 @@ router.get('/category/:category', getScholarshipsByCategory);
 /**
  * Admin only routes
  */
-router.post('/', verifyRoleAndToken('Admin'), createScholarship);
-router.patch('/:id', verifyRoleAndToken('Admin'), updateScholarship);
-router.delete('/:id', verifyRoleAndToken('Admin'), deleteScholarship);
+router.post('/', verifyAdmin, createScholarship);
+router.patch('/:id', verifyAdmin, updateScholarship);
+router.delete('/:id', verifyAdmin, deleteScholarship);
 
 module.exports = router;

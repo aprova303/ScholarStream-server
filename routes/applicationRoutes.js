@@ -10,7 +10,7 @@ const {
   updatePaymentStatus,
   deleteApplication
 } = require('../controllers/applicationController');
-const { verifyFirebaseToken, verifyRoleAndToken } = require('../config/auth');
+const { verifyRoleAndToken, verifyModerator, verifyAdmin } = require('../config/auth');
 
 /**
  * Student routes
@@ -22,17 +22,17 @@ router.delete('/:id', verifyRoleAndToken('Student'), deleteApplication);
 /**
  * Moderator/Admin routes - Get all applications
  */
-router.get('/all', verifyRoleAndToken(['Moderator', 'Admin']), getAllApplications);
+router.get('/all', verifyModerator, getAllApplications);
 
 /**
  * Moderator/Admin routes - Update application status
  */
-router.patch('/:id/status', verifyRoleAndToken(['Moderator', 'Admin']), updateApplicationStatus);
+router.patch('/:id/status', verifyModerator, updateApplicationStatus);
 
 /**
  * Admin only - Update payment status
  */
-router.patch('/:id/payment', verifyRoleAndToken('Admin'), updatePaymentStatus);
+router.patch('/:id/payment', verifyAdmin, updatePaymentStatus);
 
 /**
  * Public route - Get application by ID

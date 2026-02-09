@@ -36,11 +36,9 @@ async function run() {
   try {
     // Connect to MongoDB
     await mongoose.connect(uri, clientOptions);
-    console.log("Successfully connected to MongoDB!");
 
     // Test the connection
     await mongoose.connection.db.admin().command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
     // Routes
     app.use('/users', userRoutes);
@@ -78,15 +76,16 @@ async function run() {
 
         res.json({ sessionId: session.id });
       } catch (error) {
-        console.error('Error creating checkout session:', error.message);
         res.status(500).json({ error: error.message });
       }
     });
 
-    // Error handling middleware
+    // Error handling middleware - catch async errors
     app.use((err, req, res, next) => {
-      console.error('Server error:', err);
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ 
+        error: err.message,
+        details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      });
     });
 
     // Start server

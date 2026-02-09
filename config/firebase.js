@@ -13,9 +13,6 @@ const initializeFirebase = () => {
     
     if (!serviceAccountJson) {
       firebaseError = 'FIREBASE_SERVICE_ACCOUNT environment variable is not set';
-    //   console.warn('⚠️  WARNING:', firebaseError);
-    //   console.warn('   Firebase authentication will not work until this is configured');
-    //   console.warn('   See QUICK_REFERENCE.md for setup instructions');
       return false;
     }
 
@@ -25,15 +22,14 @@ const initializeFirebase = () => {
       serviceAccount = JSON.parse(serviceAccountJson);
     } catch (parseError) {
       firebaseError = `Invalid JSON in FIREBASE_SERVICE_ACCOUNT: ${parseError.message}`;
-      console.error(' ERROR:', firebaseError);
-      console.error('   Make sure the JSON is valid and properly formatted');
+      console.error('Firebase configuration error:', firebaseError);
       return false;
     }
 
     // Validate required fields
     if (!serviceAccount.project_id || !serviceAccount.private_key) {
       firebaseError = 'FIREBASE_SERVICE_ACCOUNT missing required fields (project_id, private_key)';
-      console.error(' ERROR:', firebaseError);
+      console.error('Firebase configuration error:', firebaseError);
       return false;
     }
 
@@ -45,11 +41,10 @@ const initializeFirebase = () => {
     }
     
     firebaseInitialized = true;
-    console.log(' Firebase Admin initialized successfully');
     return true;
   } catch (error) {
     firebaseError = `Unexpected error initializing Firebase: ${error.message}`;
-    console.error(' ERROR:', firebaseError);
+    console.error('Firebase initialization error:', firebaseError);
     return false;
   }
 };

@@ -9,43 +9,80 @@ const createOrUpdateUser = async (req, res) => {
   try {
     const { email, name, photoURL, firebaseUid } = req.body;
 
+    // Validate input
     if (!email || !firebaseUid) {
-      return res.status(400).json({ error: 'Email and firebaseUid are required' });
+      return res.status(400).json({ 
+        error: 'Email and firebaseUid are required',
+        received: { email, firebaseUid }
+      });
     }
 
-    // Find existing user
-    let user = await User.findOne({ email: email.toLowerCase() });
+    const normalizedEmail = email.toLowerCase();
+    
+    // Find existing user by email OR firebaseUid
+    let user = await User.findOne({ 
+      $or: [
+        { email: normalizedEmail },
+        { firebaseUid }
+      ]
+    });
 
     if (user) {
       // Update existing user
+      user.email = normalizedEmail;  // Ensure email is correct
+      user.firebaseUid = firebaseUid;  // Ensure firebaseUid is correct
       if (name) user.name = name;
       if (photoURL) user.photoURL = photoURL;
-      await user.save();
+      user.updatedAt = new Date();
+      
+      const updatedUser = await user.save();
+      
       return res.json({ 
         success: true, 
         message: 'User updated successfully',
-        user 
+        user: updatedUser
       });
     }
 
     // Create new user (default role: Student)
-    user = new User({
-      email: email.toLowerCase(),
+    const newUser = new User({
+      email: normalizedEmail,
       name: name || 'User',
       photoURL: photoURL || null,
       firebaseUid,
       role: 'Student'
     });
 
-    await user.save();
+    const savedUser = await newUser.save();
+    
     res.status(201).json({ 
       success: true, 
       message: 'User created successfully',
-      user 
+      user: savedUser
     });
   } catch (error) {
-    console.error('Error creating/updating user:', error.message);
-    res.status(500).json({ error: error.message });
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({ 
+        error: `${field} already exists`,
+        field: field
+      });
+    }
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({ 
+        error: 'Validation failed',
+        validationErrors: messages
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'Failed to save user: ' + error.message,
+      type: error.name
+    });
   }
 };
 
@@ -64,7 +101,6 @@ const getUserByEmail = async (req, res) => {
 
     res.json(user);
   } catch (error) {
-    console.error('Error fetching user:', error.message);
     res.status(500).json({ error: error.message });
   }
 };
@@ -84,7 +120,6 @@ const getUserRole = async (req, res) => {
 
     res.json({ role: user.role });
   } catch (error) {
-    console.error('Error fetching user role:', error.message);
     res.status(500).json({ error: error.message });
   }
 };
@@ -97,7 +132,6 @@ const getAllUsers = async (req, res) => {
     const users = await User.find().select('-firebaseUid');
     res.json(users);
   } catch (error) {
-    console.error('Error fetching users:', error.message);
     res.status(500).json({ error: error.message });
   }
 };
@@ -130,7 +164,6 @@ const updateUserRole = async (req, res) => {
       user 
     });
   } catch (error) {
-    console.error('Error updating user role:', error.message);
     res.status(500).json({ error: error.message });
   }
 };
@@ -149,7 +182,6 @@ const getUsersByRole = async (req, res) => {
     const users = await User.find({ role }).select('-firebaseUid');
     res.json(users);
   } catch (error) {
-    console.error('Error fetching users by role:', error.message);
     res.status(500).json({ error: error.message });
   }
 };
@@ -172,7 +204,6 @@ const deleteUser = async (req, res) => {
       message: 'User deleted successfully' 
     });
   } catch (error) {
-    console.error('Error deleting user:', error.message);
     res.status(500).json({ error: error.message });
   }
 };

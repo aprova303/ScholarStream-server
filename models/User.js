@@ -35,10 +35,4 @@ const userSchema = new mongoose.Schema({
   }
 }, { collection: 'users' });
 
-// Update the updatedAt field before saving
-userSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
-});
-
 module.exports = mongoose.model('User', userSchema);
