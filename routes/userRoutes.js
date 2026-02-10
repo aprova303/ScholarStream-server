@@ -13,13 +13,23 @@ const {
 const { verifyFirebaseToken, verifyAdmin } = require('../config/auth');
 
 /**
+ * Admin only - Get all users (must be before :email routes)
+ */
+router.get('/', verifyAdmin, getAllUsers);
+
+/**
  * Public route - Create or update user
  * Called when user registers or logs in
  */
 router.post('/create-or-update', verifyFirebaseToken, createOrUpdateUser);
 
 /**
- * Public route - Get user by email
+ * Admin only - Get users by role (must be before /:email routes)
+ */
+router.get('/role/:role', verifyAdmin, getUsersByRole);
+
+/**
+ * Public route - Get user role by email
  */
 router.get('/:email/role', getUserRole);
 
@@ -29,19 +39,9 @@ router.get('/:email/role', getUserRole);
 router.get('/:email', getUserByEmail);
 
 /**
- * Admin only - Get all users
- */
-router.get('/', verifyAdmin, getAllUsers);
-
-/**
  * Admin only - Update user role
  */
 router.patch('/:userId/role', verifyAdmin, updateUserRole);
-
-/**
- * Admin only - Get users by role
- */
-router.get('/role/:role', verifyAdmin, getUsersByRole);
 
 /**
  * Admin only - Delete user

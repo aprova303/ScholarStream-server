@@ -31,6 +31,7 @@ const userRoutes = require('./routes/userRoutes');
 const scholarshipRoutes = require('./routes/scholarshipRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
+const roleRequestRoutes = require('./routes/roleRequestRoutes');
 
 async function run() {
   try {
@@ -45,6 +46,7 @@ async function run() {
     app.use('/scholarships', scholarshipRoutes);
     app.use('/applications', applicationRoutes);
     app.use('/reviews', reviewRoutes);
+    app.use('/role-requests', roleRequestRoutes);
 
     // Health Check Route
     app.get('/', (req, res) => {
