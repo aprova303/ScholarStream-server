@@ -32,6 +32,7 @@ const scholarshipRoutes = require('./routes/scholarshipRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const roleRequestRoutes = require('./routes/roleRequestRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 const { verifyFirebaseToken, verifyAdmin } = require('./config/auth');
 
 async function run() {
@@ -48,6 +49,7 @@ async function run() {
     app.use('/applications', applicationRoutes);
     app.use('/reviews', reviewRoutes);
     app.use('/role-requests', roleRequestRoutes);
+    app.use('/payment', paymentRoutes);
 
     // Test route
     app.post('/test', (req, res) => {
@@ -57,35 +59,6 @@ async function run() {
     // Health Check Route
     app.get('/', (req, res) => {
       res.send('ScholarStream server is running');
-    });
-
-    // Payment related APIs (Basic structure - implement based on your needs)
-    app.post('/create-checkout-session', async (req, res) => {
-      try {
-        const { applicationFees, serviceCharge, applicationId } = req.body;
-
-        const session = await stripe.checkout.sessions.create({
-          line_items: [
-            {
-              price_data: {
-                currency: 'usd',
-                product_data: {
-                  name: 'Scholarship Application Fees',
-                },
-                unit_amount: Math.round((applicationFees + serviceCharge) * 100),
-              },
-              quantity: 1,
-            },
-          ],
-          mode: 'payment',
-          success_url: `${process.env.SITE_DOMAIN || 'http://localhost:5173'}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}&applicationId=${applicationId}`,
-          cancel_url: `${process.env.SITE_DOMAIN || 'http://localhost:5173'}/dashboard/payment-cancel`,
-        });
-
-        res.json({ sessionId: session.id });
-      } catch (error) {
-        res.status(500).json({ error: error.message });
-      }
     });
 
     // Analytics endpoint - Admin only
