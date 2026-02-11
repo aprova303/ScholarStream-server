@@ -10,29 +10,29 @@ const {
   updatePaymentStatus,
   deleteApplication
 } = require('../controllers/applicationController');
-const { verifyRoleAndToken, verifyModerator, verifyAdmin } = require('../config/auth');
+const { verifyFirebaseToken, verifyRoleAndToken, verifyModerator, verifyAdmin } = require('../config/auth');
 
 /**
  * Student routes
  */
-router.post('/', verifyRoleAndToken('Student'), createApplication);
-router.get('/my-applications', verifyRoleAndToken('Student'), getMyApplications);
-router.delete('/:id', verifyRoleAndToken('Student'), deleteApplication);
+router.post('/', verifyFirebaseToken, verifyRoleAndToken('Student'), createApplication);
+router.get('/my-applications', verifyFirebaseToken, verifyRoleAndToken('Student'), getMyApplications);
+router.delete('/:id', verifyFirebaseToken, verifyRoleAndToken('Student'), deleteApplication);
 
 /**
  * Moderator/Admin routes - Get all applications
  */
-router.get('/all', verifyModerator, getAllApplications);
+router.get('/all', verifyFirebaseToken, verifyModerator, getAllApplications);
 
 /**
  * Moderator/Admin routes - Update application status
  */
-router.patch('/:id/status', verifyModerator, updateApplicationStatus);
+router.patch('/:id/status', verifyFirebaseToken, verifyModerator, updateApplicationStatus);
 
 /**
  * Admin only - Update payment status
  */
-router.patch('/:id/payment', verifyAdmin, updatePaymentStatus);
+router.patch('/:id/payment', verifyFirebaseToken, verifyAdmin, updatePaymentStatus);
 
 /**
  * Public route - Get application by ID

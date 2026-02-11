@@ -20,9 +20,9 @@ router.get('/scholarship/:scholarshipId', getReviewsByScholarship);
 /**
  * Student routes
  */
-router.post('/', verifyRoleAndToken('Student'), createReview);
-router.get('/my-reviews', verifyRoleAndToken('Student'), getMyReviews);
-router.patch('/:id', verifyRoleAndToken('Student'), updateReview);
-router.delete('/:id', verifyRoleAndToken('Student'), deleteReview);
+router.post('/', verifyFirebaseToken, verifyRoleAndToken('Student'), createReview);
+router.get('/my-reviews', verifyFirebaseToken, verifyRoleAndToken('Student'), getMyReviews);
+router.patch('/:id', verifyFirebaseToken, verifyRoleAndToken('Student'), updateReview);
+router.delete('/:id', verifyFirebaseToken, verifyRoleAndToken('Student'), deleteReview);
 
 module.exports = router;

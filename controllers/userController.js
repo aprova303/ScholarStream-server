@@ -7,10 +7,21 @@ const User = require('../models/User');
  */
 const createOrUpdateUser = async (req, res) => {
   try {
+    console.log('[createOrUpdateUser] Called', {
+      bodyKeys: Object.keys(req.body),
+      hasUser: !!req.user,
+      userEmail: req.user?.email,
+      incomingEmail: req.body.email,
+    });
+
     const { email, name, photoURL, firebaseUid } = req.body;
 
     // Validate input
     if (!email || !firebaseUid) {
+      console.log('[createOrUpdateUser] Missing required fields:', {
+        email,
+        firebaseUid,
+      });
       return res.status(400).json({ 
         error: 'Email and firebaseUid are required',
         received: { email, firebaseUid }
@@ -29,6 +40,7 @@ const createOrUpdateUser = async (req, res) => {
 
     if (user) {
       // Update existing user
+      console.log('[createOrUpdateUser] Updating existing user:', { email: normalizedEmail });
       user.email = normalizedEmail;  // Ensure email is correct
       user.firebaseUid = firebaseUid;  // Ensure firebaseUid is correct
       if (name) user.name = name;
@@ -45,6 +57,7 @@ const createOrUpdateUser = async (req, res) => {
     }
 
     // Create new user (default role: Student)
+    console.log('[createOrUpdateUser] Creating new user:', { email: normalizedEmail, name });
     const newUser = new User({
       email: normalizedEmail,
       name: name || 'User',
@@ -54,6 +67,7 @@ const createOrUpdateUser = async (req, res) => {
     });
 
     const savedUser = await newUser.save();
+    console.log('[createOrUpdateUser] User created successfully:', { userId: savedUser._id, email: savedUser.email });
     
     res.status(201).json({ 
       success: true, 
@@ -61,6 +75,13 @@ const createOrUpdateUser = async (req, res) => {
       user: savedUser
     });
   } catch (error) {
+    console.error('[createOrUpdateUser] Error:', {
+      message: error.message,
+      code: error.code,
+      name: error.name,
+      stack: error.stack.split('\n').slice(0, 5).join('\n'),
+    });
+
     // Handle duplicate key errors
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];

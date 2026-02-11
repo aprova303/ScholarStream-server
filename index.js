@@ -32,6 +32,7 @@ const scholarshipRoutes = require('./routes/scholarshipRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const roleRequestRoutes = require('./routes/roleRequestRoutes');
+const { verifyFirebaseToken, verifyAdmin } = require('./config/auth');
 
 async function run() {
   try {
@@ -47,6 +48,11 @@ async function run() {
     app.use('/applications', applicationRoutes);
     app.use('/reviews', reviewRoutes);
     app.use('/role-requests', roleRequestRoutes);
+
+    // Test route
+    app.post('/test', (req, res) => {
+      res.json({ message: 'Test route works' });
+    });
 
     // Health Check Route
     app.get('/', (req, res) => {
@@ -82,10 +88,74 @@ async function run() {
       }
     });
 
+    // Analytics endpoint - Admin only
+    app.get('/analytics', verifyFirebaseToken, verifyAdmin, async (req, res) => {
+      try {
+        const User = require('./models/User');
+        const Application = require('./models/Application');
+        const Scholarship = require('./models/Scholarship');
+
+        // Get user counts by role
+        const totalUsers = await User.countDocuments();
+        const studentCount = await User.countDocuments({ role: 'Student' });
+        const moderatorCount = await User.countDocuments({ role: 'Moderator' });
+        const adminCount = await User.countDocuments({ role: 'Admin' });
+
+        // Get application counts by status
+        const pendingApplications = await Application.countDocuments({ status: 'Pending' });
+        const processingApplications = await Application.countDocuments({ status: 'Processing' });
+        const completedApplications = await Application.countDocuments({ status: 'Completed' });
+        const rejectedApplications = await Application.countDocuments({ status: 'Rejected' });
+
+        // Get scholarship count
+        const scholarshipCount = await Scholarship.countDocuments();
+
+        // Calculate total fees (application fees + service charge from applications)
+        const applicationAggregation = await Application.aggregate([
+          {
+            $group: {
+              _id: null,
+              totalFees: {
+                $sum: {
+                  $add: ['$applicationFees', '$serviceCharge']
+                }
+              }
+            }
+          }
+        ]);
+
+        const totalFees = applicationAggregation.length > 0 ? applicationAggregation[0].totalFees : 0;
+
+        res.json({
+          totalUsers,
+          studentCount,
+          moderatorCount,
+          adminCount,
+          totalScholarships: scholarshipCount,
+          pendingApplications,
+          processingApplications,
+          completedApplications,
+          rejectedApplications,
+          totalFees
+        });
+      } catch (error) {
+        console.error('Analytics error:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+
     // Error handling middleware - catch async errors
     app.use((err, req, res, next) => {
-      res.status(500).json({ 
-        error: err.message,
+      console.error('=== SERVER ERROR ===');
+      console.error('Error Type:', err.constructor.name);
+      console.error('Error Message:', err.message);
+      console.error('Error Code:', err.code);
+      console.error('Stack:', err.stack);
+      console.error('===================');
+      const status = err.status || err.statusCode || 500;
+      res.status(status).json({ 
+        error: err.message || 'Internal Server Error',
+        errorType: err.constructor.name,
         details: process.env.NODE_ENV === 'development' ? err.stack : undefined
       });
     });

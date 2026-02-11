@@ -110,6 +110,19 @@ const getScholarshipById = async (req, res) => {
  */
 const createScholarship = async (req, res) => {
   try {
+    console.log('[createScholarship] START', {
+      userEmail: req.user?.email,
+      userRole: req.userRole,
+      bodyKeys: Object.keys(req.body),
+    });
+
+    if (!req.user || !req.user.email) {
+      console.error('[createScholarship] Missing authentication');
+      return res.status(401).json({
+        error: 'User not authenticated',
+      });
+    }
+
     const scholarshipData = {
       ...req.body,
       postedUserEmail: req.user.email
@@ -118,14 +131,23 @@ const createScholarship = async (req, res) => {
     const scholarship = new Scholarship(scholarshipData);
     await scholarship.save();
 
+    console.log('[createScholarship] SUCCESS', { scholarshipId: scholarship._id });
+
     res.status(201).json({ 
       success: true, 
       message: 'Scholarship created successfully',
       scholarship 
     });
   } catch (error) {
-    console.error('Error creating scholarship:', error.message);
-    res.status(500).json({ error: error.message });
+    console.error('[createScholarship] ERROR', {
+      message: error.message,
+      code: error.code,
+      name: error.name,
+    });
+    return res.status(500).json({ 
+      error: 'Failed to create scholarship: ' + error.message,
+      errorType: error.name
+    });
   }
 };
 

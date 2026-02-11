@@ -9,20 +9,21 @@ const {
   deleteScholarship,
   getScholarshipsByCategory
 } = require('../controllers/scholarshipController');
-const { verifyAdmin } = require('../config/auth');
+const { verifyFirebaseToken, verifyAdmin } = require('../config/auth');
 
 /**
  * Public routes
  */
-router.get('/', getAllScholarships);
-router.get('/:id', getScholarshipById);
+// More specific routes first to prevent shadowing
 router.get('/category/:category', getScholarshipsByCategory);
+router.get('/:id', getScholarshipById);
+router.get('/', getAllScholarships);
 
 /**
- * Admin only routes
+ * Admin only routes - Use middleware chain: verify token first, then check admin role
  */
-router.post('/', verifyAdmin, createScholarship);
-router.patch('/:id', verifyAdmin, updateScholarship);
-router.delete('/:id', verifyAdmin, deleteScholarship);
+router.post('/', verifyFirebaseToken, verifyAdmin, createScholarship);
+router.patch('/:id', verifyFirebaseToken, verifyAdmin, updateScholarship);
+router.delete('/:id', verifyFirebaseToken, verifyAdmin, deleteScholarship);
 
 module.exports = router;

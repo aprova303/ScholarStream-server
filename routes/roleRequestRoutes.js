@@ -18,15 +18,15 @@ router.post('/create', verifyFirebaseToken, createRoleRequest);
 router.get('/my-requests', verifyFirebaseToken, getUserRequests);
 
 // Admin: Get all pending requests
-router.get('/pending', verifyAdmin, getPendingRequests);
+router.get('/pending', verifyFirebaseToken, verifyAdmin, getPendingRequests);
 
 // Admin: Get all requests (with history)
-router.get('/all', verifyAdmin, getAllRequests);
+router.get('/all', verifyFirebaseToken, verifyAdmin, getAllRequests);
 
 // Admin: Approve a request
-router.put('/approve/:requestId', verifyAdmin, approveRequest);
+router.put('/approve/:requestId', verifyFirebaseToken, verifyAdmin, approveRequest);
 
 // Admin: Reject a request
-router.put('/reject/:requestId', verifyAdmin, rejectRequest);
+router.put('/reject/:requestId', verifyFirebaseToken, verifyAdmin, rejectRequest);
 
 module.exports = router;
