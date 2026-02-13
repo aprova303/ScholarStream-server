@@ -7,8 +7,7 @@ const applicationSchema = new mongoose.Schema({
     required: true
   },
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    type: String,
     required: true
   },
   userName: {
@@ -51,6 +50,10 @@ const applicationSchema = new mongoose.Schema({
     type: String,
     enum: ['unpaid', 'paid'],
     default: 'unpaid'
+  },
+  transactionId: {
+    type: String,
+    default: null
   },
   applicationDate: {
     type: Date,

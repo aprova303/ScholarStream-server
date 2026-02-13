@@ -1,6 +1,7 @@
 // Review Routes
 const express = require('express');
 const router = express.Router();
+const asyncHandler = require('../middleware/asyncHandler');
 const {
   createReview,
   getAllReviews,
@@ -12,17 +13,29 @@ const {
 const { verifyFirebaseToken, verifyRoleAndToken } = require('../config/auth');
 
 /**
- * Public routes
+ * Student routes - Create review
  */
-router.get('/', getAllReviews);
-router.get('/scholarship/:scholarshipId', getReviewsByScholarship);
+router.post('/', verifyFirebaseToken, verifyRoleAndToken('Student'), asyncHandler(createReview));
 
 /**
- * Student routes
+ * Public routes - Get reviews by scholarship
  */
-router.post('/', verifyFirebaseToken, verifyRoleAndToken('Student'), createReview);
-router.get('/my-reviews', verifyFirebaseToken, verifyRoleAndToken('Student'), getMyReviews);
-router.patch('/:id', verifyFirebaseToken, verifyRoleAndToken('Student'), updateReview);
-router.delete('/:id', verifyFirebaseToken, verifyRoleAndToken('Student'), deleteReview);
+router.get('/scholarship/:scholarshipId', asyncHandler(getReviewsByScholarship));
+
+/**
+ * Student routes - Update own review
+ */
+router.patch('/:id', verifyFirebaseToken, verifyRoleAndToken('Student'), asyncHandler(updateReview));
+
+/**
+ * Student routes - Delete own review (and Moderator can delete any)
+ */
+router.delete('/:id', verifyFirebaseToken, asyncHandler(deleteReview));
+
+/**
+ * Public routes - Get all reviews (supports ?email=xxx query parameter)
+ * This goes LAST to avoid shadowing other routes
+ */
+router.get('/', asyncHandler(getAllReviews));
 
 module.exports = router;

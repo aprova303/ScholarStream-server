@@ -105,17 +105,19 @@ const updateApplicationStatus = async (req, res) => {
     const { id } = req.params;
     const { applicationStatus, feedback } = req.body;
 
-    if (!['pending', 'approved', 'rejected'].includes(applicationStatus)) {
+    if (!['pending', 'processing', 'completed', 'rejected'].includes(applicationStatus)) {
       return res.status(400).json({ error: 'Invalid application status' });
+    }
+
+    const updateData = { applicationStatus };
+    if (feedback) {
+      updateData.feedback = feedback;
+      updateData.feedbackDate = new Date();
     }
 
     const application = await Application.findByIdAndUpdate(
       id,
-      { 
-        applicationStatus, 
-        feedback: feedback || null,
-        feedbackDate: feedback ? new Date() : null
-      },
+      updateData,
       { new: true }
     );
 
@@ -130,6 +132,42 @@ const updateApplicationStatus = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating application:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Update application feedback (Moderator/Admin)
+ */
+const updateApplicationFeedback = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { feedback, feedbackDate } = req.body;
+
+    if (!feedback) {
+      return res.status(400).json({ error: 'Feedback is required' });
+    }
+
+    const application = await Application.findByIdAndUpdate(
+      id,
+      {
+        feedback,
+        feedbackDate: feedbackDate || new Date()
+      },
+      { new: true }
+    );
+
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Feedback saved successfully',
+      application 
+    });
+  } catch (error) {
+    console.error('Error updating feedback:', error.message);
     res.status(500).json({ error: error.message });
   }
 };
@@ -202,6 +240,7 @@ module.exports = {
   getAllApplications,
   getApplicationById,
   updateApplicationStatus,
+  updateApplicationFeedback,
   updatePaymentStatus,
   deleteApplication
 };

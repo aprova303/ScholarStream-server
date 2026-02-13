@@ -15,6 +15,13 @@ app.use(cors());
 const { initializeFirebase } = require('./config/firebase');
 initializeFirebase();
 
+// const serviceAccount = require("./firebase-admin-key.json");
+
+const decoded = Buffer.from(process.env.FB_SERVICE_KEY, 'base64').toString('utf8')
+const serviceAccount = JSON.parse(decoded);
+initializeFirebase(serviceAccount);
+
+
 // MongoDB Connection
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2zhcuwp.mongodb.net/ScholarStream?retryWrites=true&w=majority`;
 
@@ -41,7 +48,7 @@ async function run() {
     await mongoose.connect(uri, clientOptions);
 
     // Test the connection
-    await mongoose.connection.db.admin().command({ ping: 1 });
+    // await mongoose.connection.db.admin().command({ ping: 1 });
 
     // Routes
     app.use('/users', userRoutes);

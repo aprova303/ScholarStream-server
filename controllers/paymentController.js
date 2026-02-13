@@ -121,6 +121,7 @@ const confirmPayment = async (req, res) => {
         {
           ...applicationData,
           paymentStatus: 'paid',
+          transactionId: session.payment_intent,
           updatedAt: new Date()
         },
         { new: true }
@@ -134,6 +135,7 @@ const confirmPayment = async (req, res) => {
         ...applicationData,
         applicationStatus: 'pending',
         paymentStatus: 'paid',
+        transactionId: session.payment_intent,
         applicationDate: new Date()
       });
 
@@ -143,7 +145,11 @@ const confirmPayment = async (req, res) => {
     res.json({
       success: true,
       message: 'Payment verified and application saved successfully',
-      application
+      application,
+      transactionId: session.payment_intent,
+      paymentStatus: session.payment_status,
+      amountPaid: session.amount_total / 100, // Convert from cents to dollars
+      currency: session.currency
     });
   } catch (error) {
     console.error('Error confirming payment:', error.message);

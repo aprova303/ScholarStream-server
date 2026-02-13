@@ -35,12 +35,31 @@ const createReview = async (req, res) => {
 };
 
 /**
- * Get all reviews
+ * Get all reviews or filter by email
  */
 const getAllReviews = async (req, res) => {
   try {
-    const reviews = await Review.find().sort({ reviewDate: -1 });
-    res.json(reviews);
+    const { email } = req.query;
+    
+    let query = {};
+    if (email) {
+      query.userEmail = email;
+    }
+    
+    const reviews = await Review.find(query)
+      .populate('scholarshipId', 'scholarshipName')
+      .sort({ reviewDate: -1 });
+    
+    // Add scholarshipName to each review if populated
+    const reviewsWithNames = reviews.map(review => {
+      const reviewObj = review.toObject ? review.toObject() : review;
+      if (review.scholarshipId && review.scholarshipId.scholarshipName) {
+        reviewObj.scholarshipName = review.scholarshipId.scholarshipName;
+      }
+      return reviewObj;
+    });
+    
+    res.json(reviewsWithNames);
   } catch (error) {
     console.error('Error fetching reviews:', error.message);
     res.status(500).json({ error: error.message });
@@ -55,9 +74,19 @@ const getReviewsByScholarship = async (req, res) => {
     const { scholarshipId } = req.params;
 
     const reviews = await Review.find({ scholarshipId })
+      .populate('scholarshipId', 'scholarshipName universityName')
       .sort({ reviewDate: -1 });
+    
+    const reviewsWithNames = reviews.map(review => {
+      const reviewObj = review.toObject ? review.toObject() : review;
+      if (review.scholarshipId) {
+        reviewObj.scholarshipName = review.scholarshipId.scholarshipName;
+        reviewObj.universityNameFromScholar = review.scholarshipId.universityName;
+      }
+      return reviewObj;
+    });
 
-    res.json(reviews);
+    res.json(reviewsWithNames);
   } catch (error) {
     console.error('Error fetching reviews:', error.message);
     res.status(500).json({ error: error.message });
@@ -71,9 +100,19 @@ const getMyReviews = async (req, res) => {
   try {
     const reviews = await Review.find({ 
       userEmail: req.user.email 
-    }).sort({ reviewDate: -1 });
+    })
+      .populate('scholarshipId', 'scholarshipName')
+      .sort({ reviewDate: -1 });
+    
+    const reviewsWithNames = reviews.map(review => {
+      const reviewObj = review.toObject ? review.toObject() : review;
+      if (review.scholarshipId && review.scholarshipId.scholarshipName) {
+        reviewObj.scholarshipName = review.scholarshipId.scholarshipName;
+      }
+      return reviewObj;
+    });
 
-    res.json(reviews);
+    res.json(reviewsWithNames);
   } catch (error) {
     console.error('Error fetching reviews:', error.message);
     res.status(500).json({ error: error.message });
@@ -115,7 +154,7 @@ const updateReview = async (req, res) => {
 };
 
 /**
- * Delete review (Student - own reviews only)
+ * Delete review (Student - own reviews only, Moderator - any)
  */
 const deleteReview = async (req, res) => {
   try {
@@ -127,7 +166,13 @@ const deleteReview = async (req, res) => {
       return res.status(404).json({ error: 'Review not found' });
     }
 
-    if (review.userEmail !== req.user.email) {
+    // Allow deletion if:
+    // 1. User is the review owner, OR
+    // 2. User is a Moderator/Admin
+    const isOwner = review.userEmail === req.user.email;
+    const isModerator = req.userRole === 'Moderator' || req.userRole === 'Admin';
+
+    if (!isOwner && !isModerator) {
       return res.status(403).json({ error: 'You can only delete your own reviews' });
     }
 

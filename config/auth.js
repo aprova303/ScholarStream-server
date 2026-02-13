@@ -1,14 +1,3 @@
-// Middleware wrapper for async error handling
-const asyncMiddleware = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch((err) => {
-    if (typeof next === 'function') {
-      next(err);
-    } else {
-      res.status(500).json({ error: err.message || 'Internal Server Error' });
-    }
-  });
-};
-
 // Middleware to verify Firebase token and check user role
 const { getAuth, isInitialized } = require('./firebase');
 const User = require('../models/User');
@@ -16,16 +5,12 @@ const User = require('../models/User');
 /**
  * Middleware to verify Firebase token
  * Attaches decoded user data to req.user and user role to req.userRole
- * This is a comprehensive wrapper that fetches the user role from DB
- * Note: Does NOT require user to exist in database (role will be undefined)
  */
-const verifyFirebaseToken = asyncMiddleware(async (req, res, next) => {
+const verifyFirebaseToken = async (req, res, next) => {
   try {
-    console.log('verifyFirebaseToken called', { nextType: typeof next });
-    // Check if Firebase is initialized
     if (!isInitialized()) {
-      return res.status(503).json({ 
-        error: 'Firebase authentication is not configured. Please set up FIREBASE_SERVICE_ACCOUNT environment variable.' 
+      return res.status(503).json({
+        error: 'Firebase authentication not configured'
       });
     }
 
@@ -38,22 +23,21 @@ const verifyFirebaseToken = asyncMiddleware(async (req, res, next) => {
 
     const auth = getAuth();
     const decodedToken = await auth.verifyIdToken(token);
-    const userEmail = decodedToken.email;
 
-    // Fetch user from database to get role (optional - user might not exist during registration)
-    const user = await User.findOne({ email: userEmail });
+    const user = await User.findOne({ email: decodedToken.email });
 
-    // Attach token data to request
     req.user = decodedToken;
-    req.userRole = user?.role || null;  // Will be null if user doesn't exist yet
+    req.userRole = user?.role || null;
     req.userId = user?._id || null;
-    console.log('Token verified, about to call next', { userRole: req.userRole, nextType: typeof next });
-    next();  // Call without return - let async function complete naturally
+
+    next();
   } catch (error) {
-    console.error('verifyFirebaseToken error:', error.message, error.stack);
-    return res.status(401).json({ error: 'Invalid or expired token', details: error.message });
+    return res.status(401).json({
+      error: 'Invalid or expired token',
+      details: error.message
+    });
   }
-});
+};
 
 /**
  * Factory function to verify specific role
