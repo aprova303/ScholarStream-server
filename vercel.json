@@ -11,13 +11,5 @@
       "src": "/(.*)",
       "dest": "index.js"
     }
-  ],
-  "env": {
-    "DB_USER": "@db_user",
-    "DB_PASS": "@db_pass",
-    "STRIPE_SECRET": "@stripe_secret",
-    "STRIPE_PUBLISHABLE_KEY": "@stripe_publishable_key",
-    "SITE_DOMAIN": "@site_domain",
-    "FIREBASE_SERVICE_ACCOUNT": "@firebase_service_account"
-  }
+  ]
 }

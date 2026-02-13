@@ -13,12 +13,15 @@ app.use(cors());
 
 // Initialize Firebase Admin
 const { initializeFirebase } = require('./config/firebase');
-initializeFirebase();
 
-// const serviceAccount = require("./firebase-admin-key.json");
+// Use FIREBASE_SERVICE_ACCOUNT from env (not FB_SERVICE_KEY)
+const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
+if (!serviceAccountJson) {
+  console.error('FIREBASE_SERVICE_ACCOUNT environment variable is not set');
+  process.exit(1);
+}
 
-const decoded = Buffer.from(process.env.FB_SERVICE_KEY, 'base64').toString('utf8')
-const serviceAccount = JSON.parse(decoded);
+const serviceAccount = JSON.parse(serviceAccountJson);
 initializeFirebase(serviceAccount);
 
 
