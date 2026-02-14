@@ -39,11 +39,6 @@ const verifyFirebaseToken = async (req, res, next) => {
   }
 };
 
-/**
- * Factory function to verify specific role
- * MUST be used AFTER verifyFirebaseToken
- * Usage: router.get('/path', verifyFirebaseToken, verifyRoleAndToken('Student'), handler)
- */
 const verifyRoleAndToken = (requiredRole) => {
   return (req, res, next) => {
     // User should exist by this point when accessing role-protected routes
@@ -72,11 +67,7 @@ const verifyRoleAndToken = (requiredRole) => {
   };
 };
 
-/**
- * Middleware to verify Admin role
- * MUST be used AFTER verifyFirebaseToken
- * Checks if req.userRole === 'Admin' (token already verified)
- */
+
 const verifyAdmin = (req, res, next) => {
   try {
     console.log('[verifyAdmin] CALLED', {
@@ -96,18 +87,13 @@ const verifyAdmin = (req, res, next) => {
     }
 
     console.log('[verifyAdmin] ACCESS GRANTED - calling next()');
-    next();  // Call without return
+    next();  
   } catch (err) {
     console.error('[verifyAdmin] ERROR', { message: err.message, stack: err.stack });
     return res.status(500).json({ error: 'Error in admin verification: ' + err.message });
   }
 };
 
-/**
- * Middleware to verify Moderator role
- * MUST be used AFTER verifyFirebaseToken
- * Allows both Moderators and Admins (token already verified)
- */
 const verifyModerator = (req, res, next) => {
   // User should exist by this point when accessing moderator routes
   if (!req.userRole || (req.userRole !== 'Moderator' && req.userRole !== 'Admin')) {
@@ -116,7 +102,7 @@ const verifyModerator = (req, res, next) => {
     });
   }
 
-  next();  // Call without return
+  next();  
 };
 
 module.exports = {

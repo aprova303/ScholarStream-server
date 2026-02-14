@@ -2,7 +2,14 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const mongoose = require('mongoose');
-const stripe = require('stripe')(process.env.STRIPE_SECRET);
+
+let stripe;
+try {
+  stripe = require('stripe')(process.env.STRIPE_SECRET);
+  console.log('Stripe initialized');
+} catch (error) {
+  console.warn(' Stripe initialization warning:', error.message);
+}
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -11,18 +18,20 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use(cors());
 
-// Initialize Firebase Admin
-const { initializeFirebase } = require('./config/firebase');
+// Initialize Firebase Admin - let firebase.js handle the configuration
+const { initializeFirebase, isInitialized, getError } = require('./config/firebase');
 
-// Use FIREBASE_SERVICE_ACCOUNT from env (not FB_SERVICE_KEY)
-const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
-if (!serviceAccountJson) {
-  console.error('FIREBASE_SERVICE_ACCOUNT environment variable is not set');
-  process.exit(1);
+try {
+  const firebaseInitSuccess = initializeFirebase();
+  if (!firebaseInitSuccess) {
+    console.warn('  Firebase initialization warning:', getError());
+  } else {
+    console.log(' Firebase Admin initialized successfully');
+  }
+} catch (error) {
+  console.warn(' Firebase initialization error:', error.message);
 }
 
-const serviceAccount = JSON.parse(serviceAccountJson);
-initializeFirebase(serviceAccount);
 
 
 // MongoDB Connection
@@ -47,11 +56,14 @@ const { verifyFirebaseToken, verifyAdmin } = require('./config/auth');
 
 async function run() {
   try {
-    // Connect to MongoDB
-    await mongoose.connect(uri, clientOptions);
-
-    // Test the connection
-    // await mongoose.connection.db.admin().command({ ping: 1 });
+    // Try to connect to MongoDB but don't exit if it fails
+    try {
+      await mongoose.connect(uri, clientOptions);
+      console.log(' MongoDB connected successfully');
+    } catch (mongoError) {
+      console.warn('  MongoDB connection warning:', mongoError.message);
+      console.warn(' Server will start but database operations will fail');
+    }
 
     // Routes
     app.use('/users', userRoutes);
@@ -64,6 +76,16 @@ async function run() {
     // Test route
     app.post('/test', (req, res) => {
       res.json({ message: 'Test route works' });
+    });
+
+    // Status endpoint
+    app.get('/status', (req, res) => {
+      res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        mongoConnection: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+        firebase: require('./config/firebase').isInitialized() ? 'initialized' : 'not initialized'
+      });
     });
 
     // Health Check Route
@@ -145,12 +167,17 @@ async function run() {
 
     // Start server
     app.listen(port, () => {
-      console.log(`ScholarStream server is running on port ${port}`);
+      console.log(`\n ScholarStream server is running on port ${port}`);
+      // console.log(` Health Check: http://localhost:${port}/`);
+      // console.log(` Status: http://localhost:${port}/status`);
+      // console.log(` Test Route: POST http://localhost:${port}/test\n`);
     });
 
   } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
+    console.error(' Fatal error during server startup:', error.message);
+    console.error('Stack:', error.stack);
+    // Log the error but don't exit - let Vercel handle the function lifecycle
+    // process.exit(1); 
   }
 }
 
