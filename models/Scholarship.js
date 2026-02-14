@@ -79,11 +79,25 @@ const scholarshipSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
-}, { collection: 'scholarships' });
+//   createdAt: {
+//   type: Date,
+//   default: () => new Date()
+// },
+// updatedAt: {
+//   type: Date,
+//   default: () => new Date()
+// }
+
+}, { collection: 'scholarships',});
 
 scholarshipSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
-  next();
+  
 });
+
+// scholarshipSchema.pre('save', function () {
+//   this.updatedAt = new Date();
+// });
+
 
 module.exports = mongoose.model('Scholarship', scholarshipSchema);

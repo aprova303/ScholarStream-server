@@ -61,8 +61,6 @@ async function run() {
       await mongoose.connect(uri, clientOptions);
       console.log(' MongoDB connected successfully');
     } catch (mongoError) {
-      console.warn('  MongoDB connection warning:', mongoError.message);
-      console.warn(' Server will start but database operations will fail');
     }
 
     // Routes
@@ -94,11 +92,13 @@ async function run() {
     });
 
     // Analytics endpoint - Admin only
+    // Admin Analytics Endpoint
     app.get('/analytics', verifyFirebaseToken, verifyAdmin, async (req, res) => {
       try {
         const User = require('./models/User');
         const Application = require('./models/Application');
         const Scholarship = require('./models/Scholarship');
+        const Review = require('./models/Review');
 
         // Get user counts by role
         const totalUsers = await User.countDocuments();
@@ -106,17 +106,25 @@ async function run() {
         const moderatorCount = await User.countDocuments({ role: 'Moderator' });
         const adminCount = await User.countDocuments({ role: 'Admin' });
 
-        // Get application counts by status
-        const pendingApplications = await Application.countDocuments({ status: 'Pending' });
-        const processingApplications = await Application.countDocuments({ status: 'Processing' });
-        const completedApplications = await Application.countDocuments({ status: 'Completed' });
-        const rejectedApplications = await Application.countDocuments({ status: 'Rejected' });
+        // Get application counts by status (using correct field names)
+        const pendingApplications = await Application.countDocuments({ applicationStatus: 'pending' });
+        const processingApplications = await Application.countDocuments({ applicationStatus: 'processing' });
+        const approvedApplications = await Application.countDocuments({ applicationStatus: 'approved' });
+        const rejectedApplications = await Application.countDocuments({ applicationStatus: 'rejected' });
+        const completedApplications = await Application.countDocuments({ applicationStatus: 'completed' });
+        const totalApplications = await Application.countDocuments();
 
         // Get scholarship count
-        const scholarshipCount = await Scholarship.countDocuments();
+        const totalScholarships = await Scholarship.countDocuments();
 
-        // Calculate total fees (application fees + service charge from applications)
+        // Get review count
+        const totalReviews = await Review.countDocuments();
+
+        // Calculate total fees collected (from paid applications)
         const applicationAggregation = await Application.aggregate([
+          {
+            $match: { paymentStatus: 'paid' }
+          },
           {
             $group: {
               _id: null,
@@ -131,16 +139,25 @@ async function run() {
 
         const totalFees = applicationAggregation.length > 0 ? applicationAggregation[0].totalFees : 0;
 
+        // Get paid vs unpaid stats
+        const paidApplications = await Application.countDocuments({ paymentStatus: 'paid' });
+        const unpaidApplications = await Application.countDocuments({ paymentStatus: 'unpaid' });
+
         res.json({
           totalUsers,
           studentCount,
           moderatorCount,
           adminCount,
-          totalScholarships: scholarshipCount,
+          totalApplications,
+          totalScholarships,
+          totalReviews,
           pendingApplications,
           processingApplications,
-          completedApplications,
+          approvedApplications,
           rejectedApplications,
+          completedApplications,
+          paidApplications,
+          unpaidApplications,
           totalFees
         });
       } catch (error) {
@@ -149,14 +166,58 @@ async function run() {
       }
     });
 
+    // Moderator Analytics Endpoint
+    app.get('/moderator-analytics', verifyFirebaseToken, async (req, res) => {
+      try {
+        const User = require('./models/User');
+        const Application = require('./models/Application');
+        const Review = require('./models/Review');
+
+        // Get count of applications assigned to moderator (all applications they can review)
+        const totalApplications = await Application.countDocuments();
+        
+        const pendingApplications = await Application.countDocuments({ applicationStatus: 'pending' });
+        const processingApplications = await Application.countDocuments({ applicationStatus: 'processing' });
+        const approvedApplications = await Application.countDocuments({ applicationStatus: 'approved' });
+        const rejectedApplications = await Application.countDocuments({ applicationStatus: 'rejected' });
+        const completedApplications = await Application.countDocuments({ applicationStatus: 'completed' });
+
+        // Get review statistics
+        const totalReviews = await Review.countDocuments();
+
+        // Get application statistics by subject category
+        const scholarshipStats = await Application.aggregate([
+          {
+            $group: {
+              _id: '$scholarshipCategory',
+              count: { $sum: 1 }
+            }
+          }
+        ]);
+
+        res.json({
+          totalApplications,
+          pendingApplications,
+          processingApplications,
+          approvedApplications,
+          rejectedApplications,
+          completedApplications,
+          totalReviews,
+          scholarshipStats: scholarshipStats || []
+        });
+      } catch (error) {
+        console.error('Moderator analytics error:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+
     // Error handling middleware - catch async errors
     app.use((err, req, res, next) => {
-      console.error('=== SERVER ERROR ===');
+
       console.error('Error Type:', err.constructor.name);
       console.error('Error Message:', err.message);
       console.error('Error Code:', err.code);
       console.error('Stack:', err.stack);
-      console.error('===================');
       const status = err.status || err.statusCode || 500;
       res.status(status).json({ 
         error: err.message || 'Internal Server Error',
@@ -168,9 +229,7 @@ async function run() {
     // Start server
     app.listen(port, () => {
       console.log(`\n ScholarStream server is running on port ${port}`);
-      // console.log(` Health Check: http://localhost:${port}/`);
-      // console.log(` Status: http://localhost:${port}/status`);
-      // console.log(` Test Route: POST http://localhost:${port}/test\n`);
+      
     });
 
   } catch (error) {

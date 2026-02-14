@@ -19,7 +19,7 @@ const { verifyFirebaseToken, verifyRoleAndToken, verifyModerator, verifyAdmin } 
  */
 
 /**
- * Student route - Get my applications
+ * Student route - Get my applications (requires authentication)
  */
 router.get('/my-applications', verifyFirebaseToken, verifyRoleAndToken('Student'), asyncHandler(getMyApplications));
 
@@ -39,7 +39,7 @@ router.post('/', verifyFirebaseToken, verifyRoleAndToken('Student'), asyncHandle
 router.delete('/:id', verifyFirebaseToken, verifyRoleAndToken('Student'), asyncHandler(deleteApplication));
 
 /**
- * Moderator/Admin routes - Update application
+ * Moderator/Admin routes - Update application status
  */
 router.patch('/:id', verifyFirebaseToken, verifyModerator, asyncHandler(updateApplicationStatus));
 
@@ -54,8 +54,14 @@ router.patch('/:id/feedback', verifyFirebaseToken, verifyModerator, asyncHandler
 router.patch('/:id/payment', verifyFirebaseToken, verifyAdmin, asyncHandler(updatePaymentStatus));
 
 /**
- * Public route - Get application by ID
+ * Get application by ID (must come before GET /)
  */
 router.get('/:id', asyncHandler(getApplicationById));
+
+/**
+ * Get applications with optional email filter
+ * Handles: GET /applications and GET /applications?email=xxx
+ */
+router.get('/', asyncHandler(getAllApplications));
 
 module.exports = router;

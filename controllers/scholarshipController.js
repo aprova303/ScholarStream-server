@@ -1,17 +1,7 @@
-// Scholarship Controller
+
 const Scholarship = require('../models/Scholarship');
 
-/**
- * Get all scholarships with search, filter, sort, and pagination
- * Query parameters:
- * - search: Search term (scholarshipName, universityName, degree)
- * - category: Filter by scholarshipCategory
- * - country: Filter by universityCountry
- * - sortBy: Sort field (postDate, applicationFees) - default: postDate
- * - sortOrder: Sort order (asc, desc) - default: desc
- * - page: Page number (1-indexed) - default: 1
- * - limit: Items per page - default: 12
- */
+
 const getAllScholarships = async (req, res) => {
   try {
     const {
@@ -24,10 +14,10 @@ const getAllScholarships = async (req, res) => {
       limit = 12
     } = req.query;
 
-    // Build filter object
+  
     const filter = {};
 
-    // Search filter - searches by name, university, or degree
+  
     if (search) {
       filter.$or = [
         { scholarshipName: { $regex: search, $options: 'i' } },
@@ -55,12 +45,12 @@ const getAllScholarships = async (req, res) => {
     const sortOrderNum = sortOrder === 'asc' ? 1 : -1;
     const sortObject = { [sortField]: sortOrderNum };
 
-    // Calculate pagination
+    // pagination
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 12;
     const skip = (pageNum - 1) * limitNum;
 
-    // Get total count for pagination
+    // total count for pagination
     const total = await Scholarship.countDocuments(filter);
 
     // Fetch scholarships with filters, sort, and pagination
@@ -86,9 +76,6 @@ const getAllScholarships = async (req, res) => {
   }
 };
 
-/**
- * Get scholarship by ID
- */
 const getScholarshipById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -105,9 +92,6 @@ const getScholarshipById = async (req, res) => {
   }
 };
 
-/**
- * Create scholarship (Admin only)
- */
 const createScholarship = async (req, res) => {
   try {
     console.log('[createScholarship] START', {
@@ -151,9 +135,6 @@ const createScholarship = async (req, res) => {
   }
 };
 
-/**
- * Update scholarship (Admin only)
- */
 const updateScholarship = async (req, res) => {
   try {
     const { id } = req.params;

@@ -67,19 +67,33 @@ const applicationSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  // createdAt: {
+  //   type: Date,
+  //   default: Date.now
+  // },
+  // updatedAt: {
+  //   type: Date,
+  //   default: Date.now
+  // }
   createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  }
+  type: Date,
+  default: () => new Date()
+},
+updatedAt: {
+  type: Date,
+  default: () => new Date()
+}
+
 }, { collection: 'applications' });
 
-applicationSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
+// applicationSchema.pre('save', function(next) {
+//   this.updatedAt = Date.now();
+//   next();
+// });
+
+applicationSchema.pre('save', function () {
+  this.updatedAt = new Date();
 });
+
 
 module.exports = mongoose.model('Application', applicationSchema);

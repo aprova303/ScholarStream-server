@@ -63,11 +63,18 @@ const getMyApplications = async (req, res) => {
 };
 
 /**
- * Get all applications (Moderator/Admin)
+ * Get all applications with optional email filter (Moderator/Admin or by email query)
  */
 const getAllApplications = async (req, res) => {
   try {
-    const applications = await Application.find()
+    const { email } = req.query;
+    let query = {};
+    
+    if (email) {
+      query.userEmail = email.toLowerCase();
+    }
+    
+    const applications = await Application.find(query)
       .populate('scholarshipId')
       .sort({ applicationDate: -1 });
 
@@ -78,9 +85,7 @@ const getAllApplications = async (req, res) => {
   }
 };
 
-/**
- * Get application by ID
- */
+
 const getApplicationById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -205,9 +210,7 @@ const updatePaymentStatus = async (req, res) => {
   }
 };
 
-/**
- * Delete application (Student - only if pending)
- */
+
 const deleteApplication = async (req, res) => {
   try {
     const { id } = req.params;

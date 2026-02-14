@@ -34,7 +34,7 @@ async function createBootstrapAdmin() {
     const existing = await User.findOne({ email: ADMIN_EMAIL });
     
     if (existing) {
-      console.log('⚠️  Admin already exists:');
+      console.log(' Admin already exists:');
       console.log(`   Email: ${existing.email}`);
       console.log(`   Role: ${existing.role}\n`);
       
@@ -43,10 +43,10 @@ async function createBootstrapAdmin() {
           { email: ADMIN_EMAIL },
           { role: 'Admin' }
         );
-        console.log('✅ Updated role to Admin\n');
+        console.log(' Updated role to Admin\n');
       }
       
-      console.log('📋 No new admin created (already exists)\n');
+      console.log(' No new admin created (already exists)\n');
       await mongoose.disconnect();
       return;
     }
@@ -64,10 +64,6 @@ async function createBootstrapAdmin() {
 
     const saved = await adminUser.save();
 
-    console.log('✅ Bootstrap admin created successfully!\n');
-    console.log('📧 Email:', ADMIN_EMAIL);
-    console.log('🔑 Firebase UID:', FIREBASE_UID);
-    console.log('\n⚡ IMPORTANT:');
     console.log('1. Go to Firebase Console → Authentication → Users');
     console.log('2. Create user with email:', ADMIN_EMAIL);
     console.log('3. Set password (e.g., Admin@123)');
@@ -75,7 +71,7 @@ async function createBootstrapAdmin() {
 
     await mongoose.disconnect();
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error(' Error:', error.message);
     process.exit(1);
   }
 }
