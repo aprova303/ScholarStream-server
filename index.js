@@ -52,6 +52,7 @@ const applicationRoutes = require('./routes/applicationRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const roleRequestRoutes = require('./routes/roleRequestRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const contactRoutes = require('./routes/contactRoutes');
 const { verifyFirebaseToken, verifyAdmin } = require('./config/auth');
 
 async function run() {
@@ -70,6 +71,7 @@ async function run() {
     app.use('/reviews', reviewRoutes);
     app.use('/role-requests', roleRequestRoutes);
     app.use('/payment', paymentRoutes);
+    app.use('/contacts', contactRoutes);
 
     // Test route
     app.post('/test', (req, res) => {
