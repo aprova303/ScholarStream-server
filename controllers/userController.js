@@ -229,6 +229,46 @@ const deleteUser = async (req, res) => {
   }
 };
 
+/**
+ * Update user profile (name, photoURL)
+ * Public route - User can update their own profile
+ */
+const updateUserProfile = async (req, res) => {
+  try {
+    const { email } = req.params;
+    const { name, photoURL } = req.body;
+
+    // Validate input
+    if (!name || name.trim() === '') {
+      return res.status(400).json({ error: 'Display name is required' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Update user profile
+    user.name = name.trim();
+    if (photoURL !== undefined) {
+      user.photoURL = photoURL;
+    }
+    user.updatedAt = new Date();
+
+    const updatedUser = await user.save();
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('[updateUserProfile] Error:', error.message);
+    res.status(500).json({ error: 'Failed to update profile: ' + error.message });
+  }
+};
+
 module.exports = {
   createOrUpdateUser,
   getUserByEmail,
@@ -236,5 +276,6 @@ module.exports = {
   getAllUsers,
   updateUserRole,
   getUsersByRole,
-  deleteUser
+  deleteUser,
+  updateUserProfile
 };

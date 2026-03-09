@@ -8,7 +8,8 @@ const {
   getAllUsers,
   updateUserRole,
   getUsersByRole,
-  deleteUser
+  deleteUser,
+  updateUserProfile
 } = require('../controllers/userController');
 const { verifyFirebaseToken, verifyAdmin } = require('../config/auth');
 
@@ -29,6 +30,11 @@ router.post('/create-or-update', verifyFirebaseToken, createOrUpdateUser);
  * Admin only - Get users by role (must be before /:email routes)
  */
 router.get('/role/:role', verifyFirebaseToken, verifyAdmin, getUsersByRole);
+
+/**
+ * Public route - Update user profile by email
+ */
+router.patch('/:email', verifyFirebaseToken, updateUserProfile);
 
 /**
  * Public route - Get user role by email
